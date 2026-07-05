@@ -37,7 +37,9 @@ jobs:
       - name: Compile standalone.ino (bootstrap)
         run: |
           FQBN=$(python -c "import json; print(json.load(open('esp32-flasher.json'))['boards'][0]['bootstrap_sketch']['fqbn'])")
-          arduino-cli compile --fqbn "$FQBN" --output-dir out standalone.ino
+          mkdir -p standalone
+          cp standalone.ino standalone/standalone.ino
+          arduino-cli compile --fqbn "$FQBN" --output-dir out standalone
 
   emulator:
     name: Build emulator (Arduino sketch)

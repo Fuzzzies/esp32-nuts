@@ -1,5 +1,6 @@
 build/
 out/
+standalone/
 managed_components/
 dependencies.lock
 sdkconfig
