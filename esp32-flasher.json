@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "repo": "Fuzzzies/esp32-nuts",
+  "boards": [
+    {
+      "id": "default",
+      "chip": "esp32s2",
+      "reset": "default",
+      "setup_ap": "esp32-nuts-setup",
+      "partitions_full": {
+        "source": "partitions.csv",
+        "entries": [
+          {
+            "name": "nvs",
+            "type": "data",
+            "subtype": "nvs",
+            "offset": "0x9000",
+            "size": "0x6000"
+          },
+          {
+            "name": "phy_init",
+            "type": "data",
+            "subtype": "phy",
+            "offset": "0xf000",
+            "size": "0x1000"
+          },
+          {
+            "name": "factory",
+            "type": "app",
+            "subtype": "factory",
+            "offset": "0x10000",
+            "size": "0x300000"
+          }
+        ]
+      },
+      "partitions_bootstrap": {
+        "source": "arduino default (esp32:esp32:esp32s2, standalone.ino)",
+        "entries": [
+          {
+            "name": "nvs",
+            "type": "data",
+            "subtype": "nvs",
+            "offset": "0x9000",
+            "size": "0x5000"
+          },
+          {
+            "name": "otadata",
+            "type": "data",
+            "subtype": "ota",
+            "offset": "0xe000",
+            "size": "0x2000"
+          },
+          {
+            "name": "app0",
+            "type": "app",
+            "subtype": "ota_0",
+            "offset": "0x10000",
+            "size": "0x140000"
+          },
+          {
+            "name": "app1",
+            "type": "app",
+            "subtype": "ota_1",
+            "offset": "0x150000",
+            "size": "0x140000"
+          },
+          {
+            "name": "spiffs",
+            "type": "data",
+            "subtype": "spiffs",
+            "offset": "0x290000",
+            "size": "0x160000"
+          },
+          {
+            "name": "coredump",
+            "type": "data",
+            "subtype": "coredump",
+            "offset": "0x3f0000",
+            "size": "0x10000"
+          }
+        ]
+      },
+      "bootstrap_sketch": {
+        "path": "standalone.ino",
+        "fqbn": "esp32:esp32:esp32s2:CDCOnBoot=cdc,PSRAM=enabled"
+      },
+      "flash": {
+        "full": {
+          "type": "idf_merged",
+          "image_offset": "0x0"
+        },
+        "bootstrap": {
+          "type": "arduino_merge_bin",
+          "chip": "esp32s2",
+          "segments": [
+            { "offset": "0x0", "role": "bootloader" },
+            { "offset": "0x8000", "role": "partition_table" },
+            { "offset": "0x10000", "role": "application" }
+          ]
+        }
+      },
+      "nvs": {
+        "full": {
+          "offset": "0x9000",
+          "size": "0x6000"
+        },
+        "bootstrap": {
+          "offset": "0x9000",
+          "size": "0x5000"
+        }
+      },
+      "release_assets": {
+        "full": "esp32-nuts-usb-*.bin",
+        "bootstrap": "esp32-nuts-bootstrap-*.factory.bin"
+      },
+      "nvs_profiles": {
+        "esp32_nuts": {
+          "namespace": "espnuts",
+          "keys": {
+            "wifi_ssid": "string",
+            "wifi_pass": "string"
+          }
+        },
+        "esp32_nuts_bootstrap": {
+          "namespace": "wifi",
+          "keys": {
+            "ssid": "string",
+            "password": "string"
+          }
+        }
+      }
+    }
+  ]
+}
