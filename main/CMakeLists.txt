@@ -10,5 +10,5 @@ idf_component_register(
         "ota_mgr.c"
     INCLUDE_DIRS "."
     EMBED_TXTFILES "www/index.html"
-    REQUIRES esp_https_ota app_update
+    PRIV_REQUIRES esp_https_ota mbedtls
 )
