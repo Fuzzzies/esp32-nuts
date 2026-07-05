@@ -19,11 +19,11 @@ APP_SUBTYPES = {
     0x12: "ota_2",
 }
 DATA_SUBTYPES = {
-    0x01: "nvs",
-    0x02: "phy",
     0x00: "ota",
-    0x82: "spiffs",
+    0x01: "phy",
+    0x02: "nvs",
     0x03: "coredump",
+    0x82: "spiffs",
 }
 
 
