@@ -26,9 +26,9 @@ standard).
 |------|------|--------|------|
 | nvs | data/nvs | 0x9000 | 0x6000 (24 KiB) |
 | phy_init | data/phy | 0xf000 | 0x1000 (4 KiB) |
-| otadata | data/ota | 0x10000 | 0x2000 (8 KiB) |
-| ota_0 | app/ota_0 | 0x12000 | 0x1f7000 (~1.97 MiB) |
-| ota_1 | app/ota_1 | 0x209000 | 0x1f7000 (~1.97 MiB) |
+| ota_0 | app/ota_0 | 0x10000 | 0x1e0000 (~1.88 MiB) |
+| ota_1 | app/ota_1 | 0x1f0000 | 0x1e0000 (~1.88 MiB) |
+| otadata | data/ota | 0x3e0000 | 0x2000 (8 KiB) |
 
 ```sh
 esptool.py --chip esp32s2 write_flash 0x0 esp32-nuts-usb-<sha>.bin

@@ -95,7 +95,7 @@ def main() -> int:
     data = args.partition_bin.read_bytes()
     entries = parse_partition_bin(data)
 
-    if args.check-bootstrap:
+    if args.check_bootstrap:
         json_path = args.json or (root / "esp32-flasher.json")
         expected = load_json_bootstrap(json_path)
         errors = entries_match(entries, expected)

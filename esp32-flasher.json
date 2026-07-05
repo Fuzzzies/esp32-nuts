@@ -25,25 +25,25 @@
             "size": "0x1000"
           },
           {
-            "name": "otadata",
-            "type": "data",
-            "subtype": "ota",
-            "offset": "0x10000",
-            "size": "0x2000"
-          },
-          {
             "name": "ota_0",
             "type": "app",
             "subtype": "ota_0",
-            "offset": "0x12000",
-            "size": "0x1f7000"
+            "offset": "0x10000",
+            "size": "0x1e0000"
           },
           {
             "name": "ota_1",
             "type": "app",
             "subtype": "ota_1",
-            "offset": "0x209000",
-            "size": "0x1f7000"
+            "offset": "0x1f0000",
+            "size": "0x1e0000"
+          },
+          {
+            "name": "otadata",
+            "type": "data",
+            "subtype": "ota",
+            "offset": "0x3e0000",
+            "size": "0x2000"
           }
         ]
       },
