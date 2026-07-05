@@ -1,0 +1,25 @@
+menu "esp32-nuts"
+
+    config ESPNUTS_HOSTNAME
+        string "mDNS hostname"
+        default "esp32-nuts"
+        help
+            The device announces itself as <hostname>.local.
+
+    config ESPNUTS_WIFI_SSID
+        string "Default WiFi SSID (optional)"
+        default ""
+        help
+            Baked-in WiFi credentials for local builds. If empty and nothing
+            is stored in NVS, the device starts a provisioning access point
+            named "esp32-nuts-setup" instead.
+
+    config ESPNUTS_WIFI_PASSWORD
+        string "Default WiFi password (optional)"
+        default ""
+
+    config ESPNUTS_NUT_PORT
+        int "NUT server TCP port"
+        default 3493
+
+endmenu

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>esp32-nuts</title>
+<style>
+  :root { --bg:#14161a; --card:#1e2128; --fg:#e8e8e8; --dim:#8b919c; --ok:#3ddc84; --warn:#ffb02e; --bad:#ff5252; --accent:#4a9eff; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,Segoe UI,Roboto,sans-serif; }
+  header { display:flex; align-items:center; gap:.6em; padding:1em 1.2em; }
+  header h1 { font-size:1.15em; margin:0; font-weight:600; }
+  #variant { font-size:.7em; padding:.2em .6em; border-radius:999px; background:#333a45; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; }
+  #statuschip { margin-left:auto; font-weight:700; padding:.3em .8em; border-radius:999px; background:#333a45; }
+  #statuschip.ol { background:rgba(61,220,132,.15); color:var(--ok); }
+  #statuschip.ob { background:rgba(255,176,46,.18); color:var(--warn); }
+  #statuschip.off { background:rgba(255,82,82,.15); color:var(--bad); }
+  main { display:grid; gap:.8em; padding:0 1.2em 1.2em; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); max-width:900px; margin:0 auto; }
+  .card { background:var(--card); border-radius:12px; padding:1em; }
+  .card .k { color:var(--dim); font-size:.75em; text-transform:uppercase; letter-spacing:.06em; }
+  .card .v { font-size:1.9em; font-weight:700; margin-top:.15em; }
+  .card .u { font-size:.5em; color:var(--dim); font-weight:500; }
+  .bar { height:6px; border-radius:3px; background:#333a45; margin-top:.6em; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--accent); width:0; transition:width .5s; }
+  #battbar i { background:var(--ok); }
+  footer { color:var(--dim); font-size:.8em; text-align:center; padding:1em; }
+  footer a { color:var(--accent); text-decoration:none; }
+  #simbtn { display:none; margin:0 auto 1em; padding:.5em 1.2em; border:1px solid #444; border-radius:8px; background:transparent; color:var(--fg); cursor:pointer; }
+</style>
+</head>
+<body>
+<header>
+  <h1>&#x1F95C; esp32-nuts</h1>
+  <span id="variant">&mdash;</span>
+  <span id="statuschip">connecting&hellip;</span>
+</header>
+<main>
+  <div class="card"><div class="k">Load</div><div class="v"><span id="watts">&ndash;</span><span class="u"> W</span></div>
+    <div class="bar"><i id="loadbar"></i></div></div>
+  <div class="card"><div class="k">Load</div><div class="v"><span id="loadpct">&ndash;</span><span class="u"> %</span></div></div>
+  <div class="card"><div class="k">Battery</div><div class="v"><span id="charge">&ndash;</span><span class="u"> %</span></div>
+    <div class="bar" id="battbar"><i></i></div></div>
+  <div class="card"><div class="k">Runtime</div><div class="v"><span id="runtime">&ndash;</span></div></div>
+  <div class="card"><div class="k">Input</div><div class="v"><span id="vin">&ndash;</span><span class="u"> V</span></div></div>
+  <div class="card"><div class="k">Output</div><div class="v"><span id="vout">&ndash;</span><span class="u"> V</span></div></div>
+</main>
+<button id="simbtn"></button>
+<footer>
+  <span id="model">&mdash;</span> &middot; <span id="ip"></span> &middot; RSSI <span id="rssi"></span> dBm
+  &middot; up <span id="uptime"></span> &middot; <a href="/setup">wifi setup</a> &middot; NUT :3493
+</footer>
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (v, d=0) => v == null ? '–' : v.toFixed(d);
+let acOn = true;
+
+function fmtDur(s) {
+  if (s == null) return '–';
+  s = Math.round(s);
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60);
+  return h > 0 ? `${h}h ${String(m).padStart(2,'0')}m` : `${m}m ${String(s%60).padStart(2,'0')}s`;
+}
+
+async function tick() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    $('variant').textContent = d.variant;
+    const chip = $('statuschip');
+    chip.textContent = d.connected ? d.status : 'no UPS';
+    chip.className = !d.connected ? 'off' : d.status.startsWith('OB') ? 'ob' : 'ol';
+    $('watts').textContent = fmt(d.load_watts);
+    $('loadpct').textContent = fmt(d.load_percent);
+    $('loadbar').style.width = (d.load_percent ?? 0) + '%';
+    $('charge').textContent = fmt(d.battery_charge);
+    document.querySelector('#battbar i').style.width = (d.battery_charge ?? 0) + '%';
+    $('runtime').textContent = fmtDur(d.battery_runtime_s);
+    $('vin').textContent = fmt(d.input_voltage, 1);
+    $('vout').textContent = fmt(d.output_voltage, 1);
+    $('model').textContent = [d.mfr, d.model].filter(Boolean).join(' ') || 'unknown UPS';
+    $('ip').textContent = d.wifi.ip;
+    $('rssi').textContent = d.wifi.rssi;
+    $('uptime').textContent = fmtDur(d.uptime_s);
+    if (d.variant === 'emulator') {
+      acOn = !d.status.startsWith('OB');
+      const b = $('simbtn');
+      b.style.display = 'block';
+      b.textContent = acOn ? '⚡ simulate power failure' : '\u{1F50C} restore utility power';
+    }
+  } catch (e) {
+    $('statuschip').textContent = 'unreachable';
+    $('statuschip').className = 'off';
+  }
+}
+
+$('simbtn').onclick = async () => {
+  await fetch('/api/sim?ac=' + (acOn ? 0 : 1));
+  tick();
+};
+
+tick();
+setInterval(tick, 2000);
+</script>
+</body>
+</html>
