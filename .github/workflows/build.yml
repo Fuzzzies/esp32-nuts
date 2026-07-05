@@ -127,13 +127,14 @@ jobs:
       - name: Version USB artifact
         run: |
           SHORT_SHA="${GITHUB_SHA:0:7}"
-          cp build/esp32-nuts-usb.bin "build/esp32-nuts-usb-${SHORT_SHA}.bin"
-          ls -l build/esp32-nuts-usb*.bin
+          mkdir -p dist
+          cp build/esp32-nuts-usb.bin "dist/esp32-nuts-usb-${SHORT_SHA}.bin"
+          ls -l dist/
 
       - uses: actions/upload-artifact@v4
         with:
           name: esp32-nuts-usb
-          path: build/esp32-nuts-usb-*.bin
+          path: dist/esp32-nuts-usb-*.bin
           if-no-files-found: error
 
   release:
