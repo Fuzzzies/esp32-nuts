@@ -1,0 +1,117 @@
+name: Build firmware
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  ESP32_CORE_URL: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+
+jobs:
+  test-standalone:
+    name: Validate flasher spec + compile bootstrap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate esp32-flasher.json
+        run: python scripts/validate-esp32-flasher-json.py
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core
+        run: |
+          arduino-cli core update-index --additional-urls "$ESP32_CORE_URL"
+          arduino-cli core install esp32:esp32 --additional-urls "$ESP32_CORE_URL"
+
+      - name: Compile standalone.ino (bootstrap)
+        run: |
+          FQBN=$(python -c "import json; print(json.load(open('esp32-flasher.json'))['boards'][0]['bootstrap_sketch']['fqbn'])")
+          mkdir -p standalone
+          cp standalone.ino standalone/standalone.ino
+          arduino-cli compile --fqbn "$FQBN" --output-dir out standalone
+
+  emulator:
+    name: Build emulator (Arduino sketch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 core
+        run: |
+          arduino-cli core update-index --additional-urls "$ESP32_CORE_URL"
+          arduino-cli core install esp32:esp32 --additional-urls "$ESP32_CORE_URL"
+
+      - name: Compile sketch
+        run: |
+          arduino-cli compile \
+            --fqbn "esp32:esp32:esp32s2:CDCOnBoot=cdc,PSRAM=enabled" \
+            --output-dir out \
+            emulator/esp32-nuts-emulator
+
+      - name: Collect flashable binary
+        run: |
+          mkdir -p dist
+          # Core 3.x emits a single merged image flashable at offset 0x0;
+          # fall back to shipping the parts if this core version doesn't.
+          if compgen -G "out/*.merged.bin" > /dev/null; then
+            cp out/*.merged.bin dist/esp32-nuts-emulator.bin
+          else
+            cp out/*.ino.bin dist/esp32-nuts-emulator.app.bin
+            cp out/*.ino.bootloader.bin dist/esp32-nuts-emulator.bootloader.bin
+            cp out/*.ino.partitions.bin dist/esp32-nuts-emulator.partitions.bin
+          fi
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esp32-nuts-emulator
+          path: dist/*
+          if-no-files-found: error
+
+  usb:
+    name: Build real firmware (ESP-IDF)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build with ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.3.2
+          target: esp32s2
+          command: idf.py build merge-bin -o esp32-nuts-usb.bin
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esp32-nuts-usb
+          path: build/esp32-nuts-usb.bin
+          if-no-files-found: error
+
+  release:
+    name: Attach release binaries
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [emulator, usb]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.bin
+          generate_release_notes: true
