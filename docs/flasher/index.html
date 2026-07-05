@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>esp32-nuts — Web Flasher</title>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js"></script>
+  <style>
+    :root { --bg:#14161a; --card:#1e2128; --fg:#e8e8e8; --dim:#8b919c; --accent:#4a9eff; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family:system-ui,sans-serif;
+           display:flex; justify-content:center; padding:2rem 1rem; }
+    main { max-width:520px; width:100%; }
+    h1 { font-size:1.4rem; }
+    p, li { color:var(--dim); line-height:1.5; }
+    .card { background:var(--card); border-radius:12px; padding:1.5rem; margin:1rem 0; }
+    a { color:var(--accent); }
+    esp-web-install-button { --esp-tools-button-color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <h1>esp32-nuts Web Flasher</h1>
+  <p>Flash over USB from Chrome or Edge (Web Serial). Hold <strong>BOOT</strong>,
+     tap <strong>RST</strong>, release BOOT, then install.</p>
+
+  <div class="card">
+    <h2>Full USB firmware</h2>
+    <p>ESP-IDF merged image — real UPS monitor. Erases and flashes at offset 0.</p>
+    <esp-web-install-button manifest="manifest.full.json"></esp-web-install-button>
+  </div>
+
+  <div class="card">
+    <h2>Bootstrap (WiFi only)</h2>
+    <p>Arduino provisioning firmware. Join <code>esp32-nuts-setup</code> after flash.</p>
+    <esp-web-install-button manifest="manifest.bootstrap.json"></esp-web-install-button>
+  </div>
+
+  <div class="card">
+    <h2>After flashing</h2>
+    <ul>
+      <li>Full firmware: provision at <code>http://192.168.4.1/setup</code> or use
+          <a href="https://github.com/Fuzzzies/esp32-flasher">esp32-flasher</a> NVS injection.</li>
+      <li>Do not mix pipelines without a full reflash — see
+          <a href="https://github.com/Fuzzzies/esp32-nuts/blob/main/docs/FLASH_LAYOUT.md">FLASH_LAYOUT</a>.</li>
+    </ul>
+  </div>
+</main>
+</body>
+</html>

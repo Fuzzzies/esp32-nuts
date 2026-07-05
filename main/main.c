@@ -5,6 +5,7 @@
 #include "sdkconfig.h"
 
 #include "nut_server.h"
+#include "ota_mgr.h"
 #include "ups_data.h"
 #include "ups_source.h"
 #include "web_server.h"
@@ -31,4 +32,5 @@ void app_main(void)
     web_server_start();
     nut_server_start();
     ups_source_start();
+    ota_mgr_start();
 }

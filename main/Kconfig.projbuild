@@ -22,4 +22,11 @@ menu "esp32-nuts"
         int "NUT server TCP port"
         default 3493
 
+    config ESPNUTS_OTA_URL
+        string "HTTPS OTA firmware URL (empty to disable)"
+        default ""
+        help
+            When set, the device checks this URL once after boot for a newer
+            esp32-nuts-usb-*.bin (merged image). Example: a GitHub release asset.
+
 endmenu

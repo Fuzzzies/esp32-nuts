@@ -7,6 +7,8 @@ idf_component_register(
         "nut_server.c"
         "ups_usb.c"
         "hid_parser.c"
+        "ota_mgr.c"
     INCLUDE_DIRS "."
     EMBED_TXTFILES "www/index.html"
+    REQUIRES esp_https_ota app_update
 )

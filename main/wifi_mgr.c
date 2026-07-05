@@ -87,6 +87,21 @@ static bool load_credentials(char *ssid, size_t ssid_len, char *pass, size_t pas
         nvs_get_str(nvs, "wifi_pass", pass, &pl);
         nvs_close(nvs);
     }
+
+    // One-time migration from Arduino bootstrap NVS (wifi.ssid / wifi.password).
+    if (ssid[0] == '\0') {
+        if (nvs_open("wifi", NVS_READONLY, &nvs) == ESP_OK) {
+            size_t sl = ssid_len, pl = pass_len;
+            esp_err_t e1 = nvs_get_str(nvs, "ssid", ssid, &sl);
+            esp_err_t e2 = nvs_get_str(nvs, "password", pass, &pl);
+            nvs_close(nvs);
+            if (e1 == ESP_OK && e2 == ESP_OK && ssid[0] != '\0') {
+                ESP_LOGI(TAG, "migrating WiFi credentials from bootstrap NVS profile");
+                wifi_mgr_save_credentials(ssid, pass);
+            }
+        }
+    }
+
     if (ssid[0] == '\0') {
         strlcpy(ssid, CONFIG_ESPNUTS_WIFI_SSID, ssid_len);
         strlcpy(pass, CONFIG_ESPNUTS_WIFI_PASSWORD, pass_len);

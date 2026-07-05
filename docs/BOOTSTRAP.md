@@ -19,7 +19,7 @@ provisioning only, no USB host stack, no UPS polling.
 
 ## Provisioning flow
 
-1. Flash `esp32-nuts-bootstrap-*.factory.bin` (or compile/upload `standalone.ino`).
+1. Flash `esp32-nuts-bootstrap-*.factory.bin` (or compile/upload — see below).
 2. If no credentials are baked in, join open AP **`esp32-nuts-setup`**.
 3. Open `http://192.168.4.1/setup` and save SSID/password.
 4. Device reboots onto your LAN as `esp32-nuts.local` (bootstrap status page on `/`).
@@ -37,7 +37,16 @@ layout, NVS keys). To run the real USB UPS monitor:
 3. Provision again with the **`esp32_nuts`** NVS profile, or use menuconfig for
    local builds.
 
-Do not expect bootstrap WiFi credentials to survive a pipeline switch.
+Do not expect bootstrap WiFi credentials to survive a pipeline switch **if NVS
+was erased**. Full firmware migrates bootstrap keys when NVS is intact — see
+[NVS.md](NVS.md).
+
+### Compile locally
+
+```sh
+mkdir -p standalone && cp standalone.ino standalone/standalone.ino
+arduino-cli compile --fqbn "esp32:esp32:esp32s2:CDCOnBoot=cdc,PSRAM=enabled" standalone
+```
 
 ## CI
 

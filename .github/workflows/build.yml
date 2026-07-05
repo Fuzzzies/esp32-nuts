@@ -41,6 +41,38 @@ jobs:
           cp standalone.ino standalone/standalone.ino
           arduino-cli compile --fqbn "$FQBN" --output-dir out standalone
 
+      - name: Verify partitions_bootstrap matches compile output
+        run: |
+          PART_BIN=$(ls out/*.ino.partitions.bin 2>/dev/null | head -1)
+          if [ -z "$PART_BIN" ]; then
+            echo "no partition table binary in out/"
+            exit 1
+          fi
+          python scripts/extract-partitions-from-bin.py "$PART_BIN" --check-bootstrap
+
+      - name: Collect bootstrap factory image
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          mkdir -p dist
+          if compgen -G "out/*.merged.bin" > /dev/null; then
+            cp out/*.merged.bin "dist/esp32-nuts-bootstrap-${SHORT_SHA}.factory.bin"
+          elif compgen -G "out/*.ino.merged.bin" > /dev/null; then
+            cp out/*.ino.merged.bin "dist/esp32-nuts-bootstrap-${SHORT_SHA}.factory.bin"
+          elif compgen -G "out/*.ino.bin" > /dev/null; then
+            cp out/*.ino.bin "dist/esp32-nuts-bootstrap-${SHORT_SHA}.factory.bin"
+          else
+            echo "no flashable bootstrap binary in out/"
+            ls -la out/
+            exit 1
+          fi
+          ls -l dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esp32-nuts-bootstrap
+          path: dist/*.factory.bin
+          if-no-files-found: error
+
   emulator:
     name: Build emulator (Arduino sketch)
     runs-on: ubuntu-latest
@@ -64,8 +96,6 @@ jobs:
       - name: Collect flashable binary
         run: |
           mkdir -p dist
-          # Core 3.x emits a single merged image flashable at offset 0x0;
-          # fall back to shipping the parts if this core version doesn't.
           if compgen -G "out/*.merged.bin" > /dev/null; then
             cp out/*.merged.bin dist/esp32-nuts-emulator.bin
           else
@@ -94,16 +124,22 @@ jobs:
           target: esp32s2
           command: idf.py build merge-bin -o esp32-nuts-usb.bin
 
+      - name: Version USB artifact
+        run: |
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          cp build/esp32-nuts-usb.bin "build/esp32-nuts-usb-${SHORT_SHA}.bin"
+          ls -l build/esp32-nuts-usb*.bin
+
       - uses: actions/upload-artifact@v4
         with:
           name: esp32-nuts-usb
-          path: build/esp32-nuts-usb.bin
+          path: build/esp32-nuts-usb-*.bin
           if-no-files-found: error
 
   release:
     name: Attach release binaries
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [emulator, usb]
+    needs: [test-standalone, usb]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
