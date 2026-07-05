@@ -15,9 +15,10 @@ standard).
 |------|-------|
 | Source | [`main/`](../main/) ESP-IDF project |
 | Partition table | [`partitions.csv`](../partitions.csv) → `partitions_full` in JSON |
-| CI artifact | `esp32-nuts-usb-*.bin` (single merged image) |
+| CI artifact | `esp32-nuts-usb-<sha>.bin` (single merged image) |
 | Flash method | `idf_merged` at offset `0x0` |
 | NVS profile | `esp32_nuts` — see [NVS.md](NVS.md) |
+| OTA | Dual `ota_0` / `ota_1` slots — see below |
 
 ### `partitions_full` (from `partitions.csv`)
 
@@ -25,11 +26,18 @@ standard).
 |------|------|--------|------|
 | nvs | data/nvs | 0x9000 | 0x6000 (24 KiB) |
 | phy_init | data/phy | 0xf000 | 0x1000 (4 KiB) |
-| factory | app/factory | 0x10000 | 0x300000 (3 MiB) |
+| ota_0 | app/ota_0 | 0x10000 | 0x1e0000 (~1.88 MiB) |
+| ota_1 | app/ota_1 | 0x1f0000 | 0x1e0000 (~1.88 MiB) |
+| otadata | data/ota | 0x3e0000 | 0x2000 (8 KiB) |
 
 ```sh
-esptool.py --chip esp32s2 write_flash 0x0 esp32-nuts-usb.bin
+esptool.py --chip esp32s2 write_flash 0x0 esp32-nuts-usb-<sha>.bin
 ```
+
+**Migration:** devices on the old single `factory` 3 MiB layout require a full
+reflash when moving to OTA slots.
+
+OTA URL (optional): `idf.py menuconfig` → *esp32-nuts* → **OTA firmware URL**.
 
 ## Bootstrap firmware (Arduino)
 
@@ -38,35 +46,24 @@ esptool.py --chip esp32s2 write_flash 0x0 esp32-nuts-usb.bin
 | Source | [`standalone.ino`](../standalone.ino) (bootstrap source of truth) |
 | FQBN | `esp32:esp32:esp32s2:CDCOnBoot=cdc,PSRAM=enabled` |
 | Partition table | Arduino-ESP32 **default** scheme for ESP32-S2 → `partitions_bootstrap` in JSON |
-| CI artifact | `esp32-nuts-bootstrap-*.factory.bin` |
+| CI artifact | `esp32-nuts-bootstrap-<sha>.factory.bin` |
 | Flash method | `arduino_merge_bin` segments at 0x0, 0x8000, 0x10000 |
 | NVS profile | `esp32_nuts_bootstrap` — see [NVS.md](NVS.md) |
 
 ### `partitions_bootstrap`
 
-Filled from the first `standalone.ino` compile (Arduino core default partition
-CSV). Current values match `tools/partitions/default.csv` in arduino-esp32:
+Verified in CI against the compiled `*.ino.partitions.bin` (Arduino core default
+CSV). See [`scripts/extract-partitions-from-bin.py`](../scripts/extract-partitions-from-bin.py).
 
-| Name | Type | Offset | Size |
-|------|------|--------|------|
-| nvs | data/nvs | 0x9000 | 0x5000 |
-| otadata | data/ota | 0xe000 | 0x2000 |
-| app0 | app/ota_0 | 0x10000 | 0x140000 |
-| app1 | app/ota_1 | 0x150000 | 0x140000 |
-| spiffs | data/spiffs | 0x290000 | 0x160000 |
-| coredump | data/coredump | 0x3f0000 | 0x10000 |
-
-If you change the sketch partition scheme (custom `partitions.csv` next to the
-sketch, or a different board option), recompile, update `partitions_bootstrap`
-in `esp32-flasher.json`, and run `scripts/validate-esp32-flasher-json.py`.
+If you change the sketch partition scheme, recompile, update JSON, and re-run the
+validator.
 
 ## Pipeline comparison
 
 ```
 Full (IDF)                         Bootstrap (Arduino)
 ─────────────────────────          ─────────────────────────
-partitions.csv                     Arduino default CSV
-3 MiB factory app                  Dual OTA slots + SPIFFS
+partitions.csv (OTA slots)         Arduino default CSV
 espnuts.wifi_*  NVS keys           wifi.ssid / wifi.password
 esp32-nuts-usb-*.bin               esp32-nuts-bootstrap-*.factory.bin
 USB host + real UPS                WiFi provisioning only
@@ -75,9 +72,12 @@ USB host + real UPS                WiFi provisioning only
 ## Dev-only: emulator
 
 [`emulator/esp32-nuts-emulator/`](../emulator/esp32-nuts-emulator/) is **not**
-part of `esp32-flasher.json`. It is an Arduino sketch for local integration
-testing with simulated UPS data. Flash it manually from the Arduino IDE; do not
-assume its partition table or NVS layout matches either pipeline above.
+part of `esp32-flasher.json`. Flash manually from the Arduino IDE.
+
+## Browser flash
+
+[`docs/flasher/`](../flasher/) — ESP Web Tools page deployed to GitHub Pages on
+release (see [`.github/workflows/pages.yml`](../.github/workflows/pages.yml)).
 
 ## Switching pipelines
 
@@ -85,4 +85,4 @@ assume its partition table or NVS layout matches either pipeline above.
 2. Flash the target pipeline’s release asset.
 3. Provision WiFi using the correct NVS profile for that pipeline.
 
-See [BOOTSTRAP.md](BOOTSTRAP.md) for when to use bootstrap vs full firmware.
+Full firmware can **migrate** bootstrap credentials automatically — see [NVS.md](NVS.md).

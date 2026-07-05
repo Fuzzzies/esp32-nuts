@@ -34,13 +34,26 @@ Menuconfig defaults (`CONFIG_ESPNUTS_WIFI_*`) are used only when NVS is empty.
 Implemented via Arduino `Preferences` in
 [`standalone.ino`](../standalone.ino). Setup AP: **`esp32-nuts-setup`**.
 
-## Keys are not interchangeable
+### Local compile
+
+Arduino CLI requires a sketch folder matching the `.ino` name:
+
+```sh
+mkdir -p standalone && cp standalone.ino standalone/standalone.ino
+arduino-cli compile --fqbn "esp32:esp32:esp32s2:CDCOnBoot=cdc,PSRAM=enabled" standalone
+```
+
+## Keys are not interchangeable (by default)
 
 Bootstrap stores `wifi.ssid` / `wifi.password`. Full firmware reads
-`espnuts.wifi_ssid` / `espnuts.wifi_pass`. Flashing full firmware **on top of**
-bootstrap without erasing NVS will **not** carry WiFi credentials over.
+`espnuts.wifi_ssid` / `espnuts.wifi_pass`.
 
-After switching pipelines:
+**Migration:** on first boot, full firmware checks the bootstrap `wifi` namespace
+and copies credentials into `espnuts` when `espnuts` is empty (see
+[`main/wifi_mgr.c`](../main/wifi_mgr.c)). This only helps when NVS was **not**
+erased between pipeline flashes.
+
+After switching pipelines with erase:
 
 - Re-run WiFi setup (join `esp32-nuts-setup`, open `/setup`), or
 - Use esp32-flasher / `nvs_partition_gen` to inject the correct profile.

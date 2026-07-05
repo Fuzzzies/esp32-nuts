@@ -40,12 +40,20 @@ Board: **ESP32-S2**, setup AP **`esp32-nuts-setup`**. Enter the bootloader:
 
 ```sh
 pip install esptool
-esptool.py --chip esp32s2 --port COM5 write_flash 0x0 esp32-nuts-usb.bin
+esptool.py --chip esp32s2 --port COM5 write_flash 0x0 esp32-nuts-usb-<sha>.bin
 ```
 
+Download `esp32-nuts-usb-*.bin` and `esp32-nuts-bootstrap-*.factory.bin` from
+CI workflow artifacts or GitHub Releases.
+
 Full firmware uses NVS namespace `espnuts` (`wifi_ssid` / `wifi_pass`). Bootstrap
-uses `wifi` (`ssid` / `password`) — credentials do not carry over when switching
-pipelines.
+uses `wifi` (`ssid` / `password`). Full firmware **migrates** bootstrap credentials
+when NVS is not erased — see [docs/NVS.md](docs/NVS.md).
+
+### Web flasher (browser)
+
+On release, GitHub Pages hosts [docs/flasher/](docs/flasher/) (ESP Web Tools).
+Enable Pages source = GitHub Actions in repo settings.
 
 ### Emulator (dev only)
 
@@ -88,22 +96,22 @@ Credentials can be baked in for local builds: `idf.py menuconfig` → *esp32-nut
 
 [`.github/workflows/build.yml`](.github/workflows/build.yml):
 
-- **test-standalone** — validates `esp32-flasher.json` and compiles
-  `standalone.ino` with the FQBN from the spec
-- **emulator** job — compiles the dev emulator sketch with `arduino-cli`
-- **usb** job — builds the ESP-IDF project with `espressif/esp-idf-ci-action`
-  and merges it into a single `esp32-nuts-usb.bin` flashable at offset `0x0`
-- **release** job — pushing a `v*` tag attaches binaries to a GitHub release
-  (unchanged by the flasher-spec work)
+- **test-standalone** — validates `esp32-flasher.json`, verifies bootstrap
+  partitions, compiles `standalone.ino`, uploads `esp32-nuts-bootstrap-*.factory.bin`
+- **emulator** job — compiles the dev emulator sketch (CI artifact only)
+- **usb** job — builds ESP-IDF firmware, uploads `esp32-nuts-usb-<sha>.bin`
+- **release** job — `v*` tags attach bootstrap + USB binaries (not emulator)
+- **pages** job — on release, deploys web flasher to GitHub Pages
 
 ## Status / roadmap
 
 - [x] Emulator sketch (paste into Arduino IDE, verify the whole network stack today)
 - [x] Web dashboard, JSON API, minimal NUT server
 - [x] WiFi provisioning portal
+- [x] esp32-flasher.json dual-pipeline spec + bootstrap CI artifacts
+- [x] Bootstrap → full NVS migration helper
+- [x] OTA partition layout + HTTPS OTA (menuconfig URL)
+- [x] ESP Web Tools page ([docs/flasher/](docs/flasher/))
 - [ ] Real USB firmware validated against actual CyberPower hardware —
-  the HID Power Device path is written but **needs on-device testing**;
-  CyberPower units have known quirks (odd unit exponents on battery voltage,
-  runtime occasionally in minutes) that may need NUT-style fixups
-- [ ] OTA updates
-- [ ] ESP Web Tools (flash from the browser)
+  see [docs/HARDWARE.md](docs/HARDWARE.md); HID fixups are heuristic until tested
+- [ ] Fuzzzies esp32-flasher tool registration (external repo)

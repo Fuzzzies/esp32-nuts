@@ -1,0 +1,64 @@
+name: Deploy web flasher
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download release binaries
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/firmware
+          gh release download "${{ github.event.release.tag_name }}" \
+            --pattern 'esp32-nuts-usb-*.bin' \
+            --dir site/firmware
+          gh release download "${{ github.event.release.tag_name }}" \
+            --pattern 'esp32-nuts-bootstrap-*.factory.bin' \
+            --dir site/firmware
+          # ESP Web Tools expects stable manifest paths.
+          USB=$(ls site/firmware/esp32-nuts-usb-*.bin | head -1)
+          BOOT=$(ls site/firmware/esp32-nuts-bootstrap-*.factory.bin | head -1)
+          cp "$USB" site/firmware/esp32-nuts-usb.bin
+          cp "$BOOT" site/firmware/esp32-nuts-bootstrap.factory.bin
+          ls -l site/firmware
+
+      - name: Assemble site (manual dispatch without release assets)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir -p site/firmware
+          echo "Placeholder — publish a release or add firmware to site/firmware/" \
+            > site/firmware/README.txt
+
+      - name: Copy flasher UI
+        run: |
+          cp -r docs/flasher/* site/
+          ls -la site/
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

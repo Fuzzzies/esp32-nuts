@@ -120,6 +120,20 @@ static QueueHandle_t s_events;
 
 // --- report processing ---------------------------------------------------
 
+static void normalize_readings(ups_state_t *s)
+{
+    // CyberPower / usbhid-ups heuristic: runtime sometimes reported in minutes.
+    if (!isnan(s->battery_runtime) && s->battery_runtime > 0.0f &&
+        s->battery_runtime < 600.0f) {
+        s->battery_runtime *= 60.0f;
+    }
+    // Some units report battery voltage in centivolts (e.g. 1350 -> 13.5 V).
+    if (!isnan(s->battery_voltage) && s->battery_voltage > 50.0f &&
+        s->battery_voltage < 500.0f) {
+        s->battery_voltage /= 100.0f;
+    }
+}
+
 static void process_report(const uint8_t *buf, size_t len, uint8_t report_type)
 {
     if (len == 0) {
@@ -147,6 +161,7 @@ static void process_report(const uint8_t *buf, size_t len, uint8_t report_type)
         }
     }
     if (any) {
+        normalize_readings(&s_ups);
         s_ups.connected = true;
         s_ups.last_update_us = esp_timer_get_time();
         ups_data_set(&s_ups);

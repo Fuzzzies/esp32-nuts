@@ -1,0 +1,13 @@
+{
+  "name": "esp32-nuts USB",
+  "version": "latest",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S2",
+      "parts": [
+        { "path": "firmware/esp32-nuts-usb.bin", "offset": 0 }
+      ]
+    }
+  ]
+}

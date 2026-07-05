@@ -25,11 +25,25 @@
             "size": "0x1000"
           },
           {
-            "name": "factory",
+            "name": "ota_0",
             "type": "app",
-            "subtype": "factory",
+            "subtype": "ota_0",
             "offset": "0x10000",
-            "size": "0x300000"
+            "size": "0x1e0000"
+          },
+          {
+            "name": "ota_1",
+            "type": "app",
+            "subtype": "ota_1",
+            "offset": "0x1f0000",
+            "size": "0x1e0000"
+          },
+          {
+            "name": "otadata",
+            "type": "data",
+            "subtype": "ota",
+            "offset": "0x3e0000",
+            "size": "0x2000"
           }
         ]
       },
