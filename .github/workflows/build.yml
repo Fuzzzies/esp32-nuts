@@ -2,10 +2,14 @@ name: Build firmware
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -51,6 +55,7 @@ jobs:
           python scripts/extract-partitions-from-bin.py "$PART_BIN" --check-bootstrap
 
       - name: Collect bootstrap factory image
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           SHORT_SHA="${GITHUB_SHA:0:7}"
           mkdir -p dist
@@ -68,9 +73,11 @@ jobs:
           ls -l dist
 
       - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: esp32-nuts-bootstrap
           path: dist/*.factory.bin
+          retention-days: 1
           if-no-files-found: error
 
   emulator:
@@ -93,24 +100,6 @@ jobs:
             --output-dir out \
             emulator/esp32-nuts-emulator
 
-      - name: Collect flashable binary
-        run: |
-          mkdir -p dist
-          if compgen -G "out/*.merged.bin" > /dev/null; then
-            cp out/*.merged.bin dist/esp32-nuts-emulator.bin
-          else
-            cp out/*.ino.bin dist/esp32-nuts-emulator.app.bin
-            cp out/*.ino.bootloader.bin dist/esp32-nuts-emulator.bootloader.bin
-            cp out/*.ino.partitions.bin dist/esp32-nuts-emulator.partitions.bin
-          fi
-          ls -l dist
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: esp32-nuts-emulator
-          path: dist/*
-          if-no-files-found: error
-
   usb:
     name: Build real firmware (ESP-IDF)
     runs-on: ubuntu-latest
@@ -125,6 +114,7 @@ jobs:
           command: idf.py build merge-bin -o esp32-nuts-usb.bin
 
       - name: Version USB artifact
+        if: startsWith(github.ref, 'refs/tags/v')
         run: |
           SHORT_SHA="${GITHUB_SHA:0:7}"
           mkdir -p dist
@@ -132,9 +122,11 @@ jobs:
           ls -l dist/
 
       - uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v')
         with:
           name: esp32-nuts-usb
           path: dist/esp32-nuts-usb-*.bin
+          retention-days: 1
           if-no-files-found: error
 
   release:
