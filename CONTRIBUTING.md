@@ -20,6 +20,8 @@ python scripts/extract-partitions-from-bin.py path/to/*.ino.partitions.bin --che
 
 ## CI artifacts
 
+See [**docs/CI.md**](docs/CI.md) for the full CI/release/storage policy.
+
 | Job | Artifact | When |
 |-----|----------|------|
 | test-standalone | `esp32-nuts-bootstrap-<sha>.factory.bin` | `v*` tags only (1-day retention) |
