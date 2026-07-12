@@ -94,7 +94,8 @@ Credentials can be baked in for local builds: `idf.py menuconfig` → *esp32-nut
 
 ## CI
 
-[`.github/workflows/build.yml`](.github/workflows/build.yml):
+[`.github/workflows/build.yml`](.github/workflows/build.yml) — full details in
+[**docs/CI.md**](docs/CI.md) (storage policy, releases, how to get binaries).
 
 - **test-standalone** — validates `esp32-flasher.json`, verifies bootstrap
   partitions, compiles `standalone.ino` (artifacts on `v*` tags only)
