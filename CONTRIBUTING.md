@@ -20,11 +20,13 @@ python scripts/extract-partitions-from-bin.py path/to/*.ino.partitions.bin --che
 
 ## CI artifacts
 
-| Job | Artifact |
-|-----|----------|
-| test-standalone | `esp32-nuts-bootstrap-<sha>.factory.bin` |
-| usb | `esp32-nuts-usb-<sha>.bin` |
-| emulator | dev-only, not in releases |
+| Job | Artifact | When |
+|-----|----------|------|
+| test-standalone | `esp32-nuts-bootstrap-<sha>.factory.bin` | `v*` tags only (1-day retention) |
+| usb | `esp32-nuts-usb-<sha>.bin` | `v*` tags only (1-day retention) |
+| emulator | *(none — compile-only)* | every run |
+
+PR and `main` pushes still build and test; binaries are uploaded only on version tags for releases.
 
 ## Releases
 

@@ -97,10 +97,10 @@ Credentials can be baked in for local builds: `idf.py menuconfig` → *esp32-nut
 [`.github/workflows/build.yml`](.github/workflows/build.yml):
 
 - **test-standalone** — validates `esp32-flasher.json`, verifies bootstrap
-  partitions, compiles `standalone.ino`, uploads `esp32-nuts-bootstrap-*.factory.bin`
-- **emulator** job — compiles the dev emulator sketch (CI artifact only)
-- **usb** job — builds ESP-IDF firmware, uploads `esp32-nuts-usb-<sha>.bin`
-- **release** job — `v*` tags attach bootstrap + USB binaries (not emulator)
+  partitions, compiles `standalone.ino` (artifacts on `v*` tags only)
+- **emulator** job — compile-only check for the dev emulator sketch
+- **usb** job — builds ESP-IDF firmware (artifact on `v*` tags only)
+- **release** job — `v*` tags attach bootstrap + USB binaries to GitHub Releases
 - **pages** job — on release, deploys web flasher to GitHub Pages
 
 ## Status / roadmap
